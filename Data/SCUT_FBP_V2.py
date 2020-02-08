@@ -7,6 +7,7 @@ import struct
 import matplotlib.pyplot as plt
 import openpyxl as xls
 import pickle
+from collections import OrderedDict
 
 
 def main():
@@ -71,6 +72,21 @@ def test():
     cv2.waitKey(0)
 
 
+def train_test_divide(total, train, test):
+    index = np.arange(total)
+    np.random.shuffle(index)
+    
+    data_index = OrderedDict()
+    data_index['train'] = index[:train]
+    data_index['test'] = index[train:train+test]
+
+    # Save in pkl
+    pk_file = 'D:/ThesisData/SCUT-FBP5500_v2/data_index_1800_200.pkl'
+    with open(pk_file, 'wb') as outFile:
+        pickle.dump(data_index, outFile)
+
+
+
 
 def load_label(wb, sheet, raters, images):
         s1 = wb[sheet]
@@ -104,7 +120,7 @@ def load_landmarkds(path):
 
 
 if __name__ == '__main__':
-    main()
+    train_test_divide(2000, 1800, 200)
 
 
 

@@ -12,7 +12,7 @@ class Regressor(nn.Module):
     def __init__(self, config, writer):
         super(Regressor, self).__init__()
 
-        self.resnet = torchvision.models.resnet18(pretrained=)
+        self.resnet = torchvision.models.resnet18(pretrained=True)
 
         mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
         std = np.array([0.229, 0.224, 0.225], dtype=np.float32)

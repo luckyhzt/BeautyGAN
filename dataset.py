@@ -247,6 +247,21 @@ class FBP_dataset_V2(Data.Dataset):
 
 
 
+class AFAD(Data.Dataset):
+    '''
+    A customized dataset for AFAD
+    '''
+    def __init__(self, dataset_path, image_index, image_size, crop_size):
+        # Parameters
+        self.dataset_path = dataset_path
+        self.len = image_index.shape[0]
+        self.img_index = image_index
+        self.img_size = image_size
+        self.crop_size = crop_size
+        self.scale = 1.1
+
+
+
 class Label_Sampler():
     def __init__(self, batch_size, sample_range):
         self.batch_size = batch_size
@@ -265,7 +280,7 @@ class Label_Sampler():
         sampled = np.random.rand(self.batch_size, 1) + np.random.choice(len(self.prob), (self.batch_size, 1), p=self.prob) + 1
 
         return torch.FloatTensor(sampled)
-
+    
 
 
 

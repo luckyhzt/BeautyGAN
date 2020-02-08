@@ -145,31 +145,29 @@ def load_config(root_dir):
 
     # Hyper-parameters
     config['batch_size'] = 32
-    config['max_epoch'] = 120
+    config['max_epoch'] = 80
     config['lr'] = 1e-4
     config['lr_decay'] = 0.1
-    config['lr_decay_epoch'] = 70
+    config['lr_decay_epoch'] = 50
 
     # Log
     config['log_step'] = 10
     config['test_step'] = 40
     config['cpt_save_epoch'] = 10
-    config['cpt_save_min_epoch'] = 80
+    config['cpt_save_min_epoch'] = 50
 
     # Dataset
-    config['label_path'] = os.path.join(root_dir, 'SCUT-FBP', 'Label', 'label.npy')
-    config['SCUT-FBP'] = os.path.join(root_dir, 'SCUT-FBP', 'Pad_Square')
     config['SCUT-FBP-V2'] = os.path.join(root_dir, 'SCUT-FBP5500_v2')
     config['img_size'] = 236
     config['crop_size'] = 224
     config['train_samples'] = 1800
     config['test_samples'] = 200
     # Train and test set
-    num_images = 2000
-    img_index = np.arange(num_images)
-    np.random.shuffle(img_index)
-    config['trainset_index'] = img_index[:config['train_samples']]
-    config['testset_index'] = img_index[config['train_samples']:]
+    index_file = os.path.join(config['SCUT-FBP-V2'], 'data_index_1800_200.pkl')
+    with open(index_file, 'rb') as readFile:
+        data_index = pickle.load(readFile)
+    config['trainset_index'] = data_index['train']
+    config['testset_index'] = data_index['test']
 
     # Create directory to save result
     date_time = datetime.now()
