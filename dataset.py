@@ -107,6 +107,7 @@ class FBP_dataset(Data.Dataset):
 
 
 
+
 class FBP_dataset_V2(Data.Dataset):
     '''
     A customized dataset for SCUT-FBP-5500-V2
@@ -247,12 +248,14 @@ class FBP_dataset_V2(Data.Dataset):
 
 
 
+
 class AFAD(Data.Dataset):
     '''
     A customized dataset for AFAD
     '''
-    def __init__(self, dataset_path, image_index, image_size, crop_size):
+    def __init__(self, mode, dataset_path, image_index, image_size, crop_size):
         # Parameters
+        self.mode = mode
         self.dataset_path = dataset_path
         self.len = image_index.shape[0]
         self.img_index = image_index
@@ -260,13 +263,67 @@ class AFAD(Data.Dataset):
         self.crop_size = crop_size
         self.scale = 1.1
 
+        # Load annotation
+        pkl_file = os.path.join(self.dataset_path, 'Annotation.pkl')
+        with open(pkl_file, 'rb') as f:
+            self.annotation = pickle.load(f)
+
+        # Define image transforms
+        if self.mode == 'train':
+            self.transform = transforms.Compose([
+                transforms.Resize(self.img_size),
+                transforms.RandomCrop(self.crop_size),
+                torchvision.transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                ops.Img_to_zero_center(),
+            ])
+        if self.mode == 'test':
+            self.transform = transforms.Compose([
+                transforms.Resize(self.img_size),
+                transforms.CenterCrop(self.crop_size),
+                transforms.ToTensor(),
+                ops.Img_to_zero_center(),
+            ])
+    
+
+    def __getitem__(self, index):
+        data = self.annotation[ self.img_index[index] ]
+        face = self.get_face(data)
+        # Apply transform
+        x = self.transform(face)
+
+        return x
+    
+
+    def get_face(self, data):
+        # Load image in opencv
+        img_path = os.path.join(self.dataset_path, data['path'])
+        face = cv2.imread(img_path)
+        
+        # Get face box
+        h, w, _ = face.shape
+        pad_h = int((h * self.scale - h) / 2)
+        pad_w = int((w * self.scale - w) / 2)
+
+        face = cv2.copyMakeBorder(face, pad_h, pad_h, pad_w, pad_w, borderType=cv2.BORDER_CONSTANT, value=(255, 255, 255))
+
+        # Convert to PIL RGB image
+        face = Image.fromarray(cv2.cvtColor(face, cv2.COLOR_BGR2RGB))
+
+        return face
+
+
+    def __len__(self):
+        return self.len
+
+
 
 
 class Label_Sampler():
     def __init__(self, batch_size, sample_range):
         self.batch_size = batch_size
         self.sample_range = sample_range
-        self.prob = [43/500, 339/500, 81/500, 37/500]
+        self.prob = [91/1800, 856/1800, 650/1800, 203/1800]
     
 
     def sample(self):

@@ -1,16 +1,27 @@
 import numpy as np
 import os
+import pickle
 
 
 
 def main():
-    thisDir = os.path.dirname(__file__)
-    label_path = 'D:/ThesisData/SCUT-FBP/Label/label.npy'
-    label = np.load(label_path)
-    label = average_score(label)
+    '''thisDir = os.path.dirname(__file__)
+    label_path = 'D:/ThesisData/SCUT-FBP/Label/label.npy'''
+
+    path = 'D:/ThesisData/SCUT-FBP5500_v2/annotation.pkl'
+    annotation = pickle.load( open(path, 'rb') )
+    
+    label = []
+    for i in range(1800):
+        ratings = annotation[i]['all_ratings']
+        score = np.sum(ratings) / np.count_nonzero(ratings)
+        label.append(score)
+    
+    label = np.array(label).reshape(-1, 1)
+
     label = label_level(label, 4)
     dist = np.sum(label, axis=0)
-    print(dist/np.sum(dist))
+    print(dist)
 
 
 
