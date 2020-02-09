@@ -100,7 +100,7 @@ class Generator(nn.Module):
         ]
 
         # Residual layers
-        for _ in range(6):
+        for _ in range(2):
             layers += [Residual_block(512, None, use_bias=True)]
 
         # Up-sample layers

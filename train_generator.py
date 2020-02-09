@@ -26,7 +26,7 @@ import utils
 
 class Trainer:
 
-    def __init__(self, train_loader_d, test_loader, unlabel_loader, label_sampler):
+    def __init__(self, train_loader_d, train_loader_u, train_loader_c, test_loader, label_sampler):
         # Model
         self.regressor = R.Regressor(config, writer)
         self.generator = G.Generator(config, writer)
@@ -34,8 +34,9 @@ class Trainer:
         self.feature = F.Feature_extractor(config['feature_model'], config['pretrained_path'])
         # Data
         self.train_loader_d = train_loader_d
+        self.train_loader_u = train_loader_u
+        self.train_loader_c = train_loader_c
         self.test_loader = test_loader
-        self.unlabel_loader = unlabel_loader
         self.label_sampler = label_sampler
         # Use CUDA
         if config['use_gpu'] and torch.cuda.is_available():
@@ -71,23 +72,27 @@ class Trainer:
 
         print('\nStart training...\n')
         for e in range(config['max_epoch']):
-            steps_per_epoch = min(len(self.train_loader_d), len(self.unlabel_loader))
+            steps_per_epoch = min(len(self.train_loader_d), len(self.train_loader_u), len(self.train_loader_c))
             if e % (len(self.train_loader_d) / steps_per_epoch) == 0:
                 train_iter_d = iter(self.train_loader_d)
-            if e % (len(self.unlabel_loader) / steps_per_epoch) == 0:
-                unlabel_iter = iter(self.unlabel_loader)
+            if e % (len(self.train_loader_u) / steps_per_epoch) == 0:
+                train_iter_u = iter(self.train_loader_u)
+            if e % (len(self.train_loader_c) / steps_per_epoch) == 0:
+                train_iter_c = iter(self.train_loader_c)
 
             for _ in range(steps_per_epoch):
                 start = time.time()
                 step += 1
                 # Get data
-                x_d, y_d = train_iter_d.next()
-                x_u = unlabel_iter.next()
+                x_d = train_iter_d.next()
+                x_u = train_iter_u.next()
+                x_c, y_c = train_iter_c.next()
                 y_g = self.label_sampler.sample()
                 # Put in GPU
                 if self.use_cuda:
-                    x_d = x_d.cuda(); y_d = y_d.cuda()
+                    x_d = x_d.cuda()
                     x_u = x_u.cuda(); y_g = y_g.cuda()
+                    x_c = x_c.cuda(); y_c = y_c.cuda()
 
                 #========== Train ==========
                 x_g = self.generator(x_u, y_g)
@@ -97,7 +102,7 @@ class Trainer:
                 # Train Generator
                 g_loss_d, g_loss_feat, g_loss_r, g_loss = self.train_generator(x_u, x_g, y_g)
                 # Train Generator with Cycle loss
-                g_loss_cycle = self.train_generator_cycle(x_d, y_d)
+                g_loss_cycle = self.train_generator_cycle(x_c, y_c)
 
                 elapsed = time.time() - start
 
@@ -242,11 +247,11 @@ def load_config(root_dir):
     config['lr'] = 1e-4
     config['lr_decay'] = 0.3
     config['lr_decay_epoch'] = 100
-    config['alpha_g'] = 1.0    # weights of generator training against discriminator
-    config['alpha_d'] = 1.0    # weights of discriminator training with real samples
-    config['feature_loss_weight'] = 1.0
-    config['reg_loss_weight'] = 1.0
-    config['cycle_g_loss'] = 0.1
+    config['alpha_g'] = 0.8    # weights of generator training against discriminator
+    config['alpha_d'] = 0.8    # weights of discriminator training with real samples
+    config['feature_loss_weight'] = 0.8
+    config['reg_loss_weight'] = 1.2
+    config['cycle_g_loss'] = 0.08
     # Log
     config['log_step'] = 10
     config['image_save_step'] = 100
@@ -267,15 +272,17 @@ def load_config(root_dir):
     config['AFAD'] = os.path.join(root_dir, 'AFAD_Lite')
     config['img_size'] = 236
     config['crop_size'] = 224
-    config['train_samples'] = 2000
-    config['unlabel_samples'] = 24000
+    config['c_samples'] = 2000
+    config['d_samples'] = 4000
+    config['u_samples'] = 20000
     config['test_samples'] = 500
     config['sample_range'] = [1.0, 5.0]
     # Train and test set
-    config['trainset_index'] = np.arange(config['train_samples'])
+    config['c_index'] = np.arange(config['c_samples'])
     female_index = np.load( os.path.join(config['AFAD'], 'female_index.npy') )
-    config['unlabel_index'] = female_index[:config['unlabel_samples']]
-    config['testset_index'] = female_index[config['unlabel_samples']:config['unlabel_samples']+config['test_samples']]
+    config['d_index'], config['u_index'], config['test_index'], _ = \
+        np.split(female_index, [config['d_samples'], config['d_samples']+config['u_samples'], \
+            config['d_samples']+config['u_samples']+config['test_samples']])
 
     # Create directory to save result
     date_time = datetime.now()
@@ -314,19 +321,21 @@ def load_config(root_dir):
 
 def main():
     # Create dataset
-    trainset = FBP_dataset_V2('train', config['SCUT-FBP-V2'], config['trainset_index'], config['img_size'], config['crop_size'])
-    unlabelset = AFAD('train', config['AFAD'], config['unlabel_index'], config['img_size'], config['crop_size'])
-    testset = AFAD('test', config['AFAD'], config['testset_index'], config['img_size'], config['crop_size'])
+    train_c = FBP_dataset_V2('train', config['SCUT-FBP-V2'], config['c_index'], config['img_size'], config['crop_size'])
+    train_d = AFAD('train', config['AFAD'], config['d_index'], config['img_size'], config['crop_size'])
+    train_u = AFAD('train', config['AFAD'], config['u_index'], config['img_size'], config['crop_size'])
+    test = AFAD('test', config['AFAD'], config['test_index'], config['img_size'], config['crop_size'])
 
     # Get dataset loader
-    train_loader_d = Data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True)
-    unlabel_loader = Data.DataLoader(unlabelset, batch_size=config['batch_size'], shuffle=True)
-    test_loader = Data.DataLoader(testset, batch_size=config['num_visualize_images']-1, shuffle=True)
+    train_loader_c = Data.DataLoader(train_c, batch_size=config['batch_size'], shuffle=True)
+    train_loader_d = Data.DataLoader(train_d, batch_size=config['batch_size'], shuffle=True)
+    train_loader_u = Data.DataLoader(train_u, batch_size=config['batch_size'], shuffle=True)
+    test_loader = Data.DataLoader(test, batch_size=config['num_visualize_images']-1, shuffle=True)
     # Label sampler for Generator
     sampler = Label_Sampler(config['batch_size'], config['sample_range'])
 
     # Initialize trainer
-    trainer = Trainer(train_loader_d, test_loader, unlabel_loader, sampler)
+    trainer = Trainer(train_loader_d, train_loader_u, train_loader_c, test_loader, sampler)
 
     # Lauch Tensorboard
     t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
@@ -350,12 +359,4 @@ if __name__ == '__main__':
 
     # Start training
     main()
-
-
-
-
-
-
-
-
 
