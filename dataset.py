@@ -320,13 +320,12 @@ class AFAD(Data.Dataset):
 
 
 class Label_Sampler():
-    def __init__(self, batch_size, sample_range):
-        self.batch_size = batch_size
+    def __init__(self, sample_range):
         self.sample_range = sample_range
         self.prob = [91/1800, 856/1800, 650/1800, 203/1800]
     
 
-    def sample(self):
+    def sample(self, batch_size):
         #minScore = self.sample_range[0]
         #maxScore = self.sample_range[1]
 
@@ -334,7 +333,7 @@ class Label_Sampler():
 
         #sampled = 2.5 * np.random.randn(self.batch_size, 1) + 2.5
 
-        sampled = np.random.rand(self.batch_size, 1) + np.random.choice(len(self.prob), (self.batch_size, 1), p=self.prob) + 1
+        sampled = np.random.rand(batch_size, 1) + np.random.choice(len(self.prob), (batch_size, 1), p=self.prob) + 1
 
         return torch.FloatTensor(sampled)
     

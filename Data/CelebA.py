@@ -7,7 +7,7 @@ import pickle
 
 
 def extract():
-    root_dir = 'D:/ProgramData/CelebA'
+    root_dir = 'D:/ThesisData/CelebA'
 
     num = 202599
 
@@ -57,7 +57,7 @@ def extract():
 
 
 def test():
-    root_dir = 'D:/ProgramData/CelebA'
+    root_dir = 'D:/ThesisData/CelebA'
     
     pkl_file = os.path.join(root_dir, 'Annotation.pkl')
     with open(pkl_file, 'rb') as f:
@@ -86,5 +86,31 @@ def test():
 
 
 
+def select():
+    root_dir = 'D:/ThesisData/CelebA'
+    
+    pkl_file = os.path.join(root_dir, 'Annotation.pkl')
+    with open(pkl_file, 'rb') as f:
+        annotation = pickle.load(f)
+
+    index = []
+    for i, anno in enumerate(annotation):
+        attr = anno['attributes']
+        bbox = anno['bbox']
+        w, h = bbox[2:4]
+        size = max(w, h)
+        if attr['Male'] == False and attr['Eyeglasses'] == False and size >= 224 :
+            index.append(i)
+    
+    index = np.array(index)
+    print(index[0:10])
+    np.random.shuffle(index)
+    print(index[0:10])
+
+    np.save( os.path.join(root_dir, 'index.npy'), index )
+
+
+
+
 if __name__ == '__main__':
-    test()
+    select()

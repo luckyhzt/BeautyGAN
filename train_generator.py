@@ -84,10 +84,10 @@ class Trainer:
                 start = time.time()
                 step += 1
                 # Get data
-                x_d = train_iter_d.next()
-                x_u = train_iter_u.next()
+                x_d, _ = train_iter_d.next()
+                x_u, _ = train_iter_u.next()
                 x_c, y_c = train_iter_c.next()
-                y_g = self.label_sampler.sample()
+                y_g = self.label_sampler.sample(x_u.size(0))
                 # Put in GPU
                 if self.use_cuda:
                     x_d = x_d.cuda()
@@ -209,7 +209,7 @@ class Trainer:
         self.generator.eval()
         # Forward one image into generator for n times with different label
         test_iter = iter(self.test_loader)
-        x_t = test_iter.next()
+        x_t, _ = test_iter.next()
         x_t = x_t.cuda()
         x_g = torch.cat([x_g, x_t], dim=0)
 
@@ -243,21 +243,21 @@ def load_config(root_dir):
 
     # Hyper-parameters
     config['batch_size'] = 16
-    config['max_epoch'] = 300
+    config['max_epoch'] = 150
     config['lr'] = 1e-4
     config['lr_decay'] = 0.3
-    config['lr_decay_epoch'] = 100
+    config['lr_decay_epoch'] = 50
     config['alpha_g'] = 0.8    # weights of generator training against discriminator
     config['alpha_d'] = 0.8    # weights of discriminator training with real samples
-    config['feature_loss_weight'] = 0.8
-    config['reg_loss_weight'] = 1.2
-    config['cycle_g_loss'] = 0.08
+    config['feature_loss_weight'] = 0.5
+    config['reg_loss_weight'] = 1.5
+    config['cycle_g_loss'] = 0.05
     # Log
     config['log_step'] = 10
     config['image_save_step'] = 100
     config['num_visualize_images'] = 5   # num of generated images to be saved
     config['cpt_save_epoch'] = 10
-    config['cpt_save_min_epoch'] = 200
+    config['cpt_save_min_epoch'] = 100
 
     # Pretrained feature extractor and regressor
     feature_networks = ['resnet50_ft_dag', 'senet50_256', 'vgg_face_dag', 'vgg_m_face_bn_dag']
@@ -272,17 +272,23 @@ def load_config(root_dir):
     config['AFAD'] = os.path.join(root_dir, 'AFAD_Lite')
     config['img_size'] = 236
     config['crop_size'] = 224
-    config['c_samples'] = 2000
-    config['d_samples'] = 4000
-    config['u_samples'] = 20000
-    config['test_samples'] = 500
+    #config['c_samples'] = 2000
+    #config['d_samples'] = 4000
+    #config['u_samples'] = 20000
+    #config['train_samples'] = 1800
+    #config['test_samples'] = 200
     config['sample_range'] = [1.0, 5.0]
+    index_file = os.path.join(config['SCUT-FBP-V2'], 'data_index_1800_200.pkl')
+    with open(index_file, 'rb') as readFile:
+        data_index = pickle.load(readFile)
+    config['train_index'] = data_index['train']
+    config['test_index'] = data_index['test']
     # Train and test set
-    config['c_index'] = np.arange(config['c_samples'])
-    female_index = np.load( os.path.join(config['AFAD'], 'female_index.npy') )
-    config['d_index'], config['u_index'], config['test_index'], _ = \
-        np.split(female_index, [config['d_samples'], config['d_samples']+config['u_samples'], \
-            config['d_samples']+config['u_samples']+config['test_samples']])
+    #config['c_index'] = np.arange(config['c_samples'])
+    #female_index = np.load( os.path.join(config['AFAD'], 'female_index.npy') )
+    #config['d_index'], config['u_index'], config['test_index'], _ = \
+    #    np.split(female_index, [config['d_samples'], config['d_samples']+config['u_samples'], \
+    #        config['d_samples']+config['u_samples']+config['test_samples']])
 
     # Create directory to save result
     date_time = datetime.now()
@@ -321,18 +327,16 @@ def load_config(root_dir):
 
 def main():
     # Create dataset
-    train_c = FBP_dataset_V2('train', config['SCUT-FBP-V2'], config['c_index'], config['img_size'], config['crop_size'])
-    train_d = AFAD('train', config['AFAD'], config['d_index'], config['img_size'], config['crop_size'])
-    train_u = AFAD('train', config['AFAD'], config['u_index'], config['img_size'], config['crop_size'])
-    test = AFAD('test', config['AFAD'], config['test_index'], config['img_size'], config['crop_size'])
+    trainset = FBP_dataset_V2('train', config['SCUT-FBP-V2'], config['train_index'], config['img_size'], config['crop_size'])
+    testset = FBP_dataset_V2('test', config['SCUT-FBP-V2'], config['test_index'], config['img_size'], config['crop_size'])
 
     # Get dataset loader
-    train_loader_c = Data.DataLoader(train_c, batch_size=config['batch_size'], shuffle=True)
-    train_loader_d = Data.DataLoader(train_d, batch_size=config['batch_size'], shuffle=True)
-    train_loader_u = Data.DataLoader(train_u, batch_size=config['batch_size'], shuffle=True)
-    test_loader = Data.DataLoader(test, batch_size=config['num_visualize_images']-1, shuffle=True)
+    train_loader_c = Data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True)
+    train_loader_d = Data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True)
+    train_loader_u = Data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True)
+    test_loader = Data.DataLoader(testset, batch_size=config['num_visualize_images']-1, shuffle=True)
     # Label sampler for Generator
-    sampler = Label_Sampler(config['batch_size'], config['sample_range'])
+    sampler = Label_Sampler(config['sample_range'])
 
     # Initialize trainer
     trainer = Trainer(train_loader_d, train_loader_u, train_loader_c, test_loader, sampler)
