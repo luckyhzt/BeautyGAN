@@ -83,17 +83,19 @@ class Trainer:
             for _ in range(steps_per_epoch):
                 start = time.time()
                 step += 1
+
                 # Get data
                 x_d, _ = train_iter_d.next()
                 x_u, _ = train_iter_u.next()
                 x_c, y_c = train_iter_c.next()
                 y_g = self.label_sampler.sample(x_u.size(0))
+
                 # Put in GPU
                 if self.use_cuda:
                     x_d = x_d.cuda()
                     x_u = x_u.cuda(); y_g = y_g.cuda()
                     x_c = x_c.cuda(); y_c = y_c.cuda()
-
+                
                 #========== Train ==========
                 x_g = self.generator(x_u, y_g)
 
@@ -105,7 +107,6 @@ class Trainer:
                 g_loss_cycle = self.train_generator_cycle(x_c, y_c)
 
                 elapsed = time.time() - start
-
                 run_vars.add([d_loss_d, d_loss_g, g_loss_d, g_loss_feat, g_loss_r, g_loss_cycle, elapsed])
                 
                 # Print log

@@ -339,14 +339,14 @@ class Label_Sampler():
 
 
 
-# test
+'''# test
 index = np.arange(400)
 trainset = FBP_dataset_V2('train', 'D:/ThesisData/SCUT-FBP5500_v2', np.arange(1000), 236, 224)
 train_loader = Data.DataLoader(trainset, batch_size=8, shuffle=True)
 train_iter = iter(train_loader)
 x, y = train_iter.next()
 print(x.size())
-print(y)
+print(y)'''
 
 '''sampler = Label_Sampler(10000, None)
 s = sampler.sample()
