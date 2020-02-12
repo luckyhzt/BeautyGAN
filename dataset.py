@@ -123,14 +123,13 @@ class FBP_dataset_V2(Data.Dataset):
         self.scale = 1.1
 
         # Load annotation
-        pkl_file = os.path.join(self.dataset_path, 'Annotation.pkl')
+        pkl_file = os.path.join(self.dataset_path, 'Annotation_crop.pkl')
         with open(pkl_file, 'rb') as f:
             self.annotation = pickle.load(f)
 
         # Define image transforms
         if self.mode == 'train':
             self.transform = transforms.Compose([
-                transforms.Resize(self.img_size),
                 transforms.RandomCrop(self.crop_size),
                 torchvision.transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
@@ -138,7 +137,6 @@ class FBP_dataset_V2(Data.Dataset):
             ])
         if self.mode == 'test':
             self.transform = transforms.Compose([
-                transforms.Resize(self.img_size),
                 transforms.CenterCrop(self.crop_size),
                 transforms.ToTensor(),
                 ops.Img_to_zero_center(),
@@ -148,7 +146,7 @@ class FBP_dataset_V2(Data.Dataset):
     def __getitem__(self, index):
         # Get image
         data = self.annotation[ self.img_index[index] ]
-        face = self.get_face(data)
+        face = Image.open(os.path.join(self.dataset_path, data['path']))
         # Apply Transform
         x = self.transform(face)
         ratings = data['all_ratings']
@@ -341,14 +339,14 @@ class Label_Sampler():
 
 
 
-'''# test
+# test
 index = np.arange(400)
 trainset = FBP_dataset_V2('train', 'D:/ThesisData/SCUT-FBP5500_v2', np.arange(1000), 236, 224)
 train_loader = Data.DataLoader(trainset, batch_size=8, shuffle=True)
 train_iter = iter(train_loader)
 x, y = train_iter.next()
 print(x.size())
-print(y)'''
+print(y)
 
 '''sampler = Label_Sampler(10000, None)
 s = sampler.sample()
