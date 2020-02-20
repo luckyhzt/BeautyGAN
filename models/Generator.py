@@ -82,29 +82,27 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         # Down-sample layers
-        layers = [
+        down_sample_layers = [
             nn.InstanceNorm2d(3),
             nn.ReflectionPad2d(3),
             nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=0, bias=True),
-            #basic.Condition_IN(1, 64),
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=True),
-            #basic.Condition_IN(1, 128),
             nn.ReLU(inplace=True),
             nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1, bias=True),
-            #basic.Condition_IN(1, 256),
             nn.ReLU(inplace=True),
             nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1, bias=True),
-            basic.Condition_IN(1, 512),
-            nn.ReLU(inplace=True),
         ]
-
+        self.down_sample = nn.Sequential(*down_sample_layers)
+        
+        self.cond_norm = basic.Condition_IN(1, 512)
         # Residual layers
-        for _ in range(2):
-            layers += [Residual_block(512, None, use_bias=True)]
+        #for _ in range(2):
+            #layers += [Residual_block(512, None, use_bias=True)]
 
         # Up-sample layers
-        layers += [
+        up_sample_layers = [
+            nn.ReLU(inplace=True),
             nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True),
             nn.ReLU(inplace=True),
             nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True),
@@ -115,26 +113,28 @@ class Generator(nn.Module):
             nn.Conv2d(64, 3, kernel_size=7, stride=1, padding=0, bias=True),
             nn.Tanh(),
         ]
-        self.layers = nn.Sequential(*layers)
+        self.up_sample = nn.Sequential(*up_sample_layers)
 
         # Write architecture to tensorboard
         if writer != None:
             title = str(self.__class__.__name__)
             content = ''
-            for name, layer in self.layers.named_children():
+            for name, layer in self.named_children():
                 content += ' ' + str(name) + ': ' + str(layer) + '\n\n' 
             content = content.replace('\n', '  \n')
             writer.add_text(title, content, 0)
     
 
-    def forward(self, x, cond):
-        for name, layer in self.layers.named_children():
-            if str(layer)[0:9] == 'Condition' or str(layer)[0:6] == 'Concat':
-                x = layer(x, cond)
-            else:
-                x = layer(x)
-        
-        return x
+    def forward(self, x, cond, cycle=False):
+        if not cycle:
+            x = self.down_sample(x)
+            x = self.cond_norm(x, cond)
+            x = self.up_sample(x)
+            return x
+        elif cycle:
+            x = self.down_sample(x)
+            norm_x = self.cond_norm(x, cond)
+            return x, norm_x
 
     
     def save(self, path):

@@ -36,7 +36,7 @@ class PatchDiscriminator(nn.Module):
         if writer != None:
             title = str(self.__class__.__name__)
             content = ''
-            for name, layer in self.layers.named_children():
+            for name, layer in self.named_children():
                 content += ' ' + str(name) + ': ' + str(layer) + '\n\n'
             content = content.replace('\n', '  \n')
             writer.add_text(title, content, 0)

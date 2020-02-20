@@ -1,3 +1,8 @@
+import os
+import sys
+thisDir = os.path.dirname(__file__)
+sys.path.append(os.path.abspath(os.path.join(thisDir, os.pardir, os.pardir)))
+
 import numpy as np
 import time
 import torch
@@ -5,7 +10,6 @@ import torch.nn as nn
 import torch.utils.data as Data
 import torchvision
 from datetime import datetime
-import os
 import argparse
 import matplotlib.pyplot as plt
 import threading
@@ -19,8 +23,9 @@ import models.Regressor as R
 import models.Loss as L
 import models.Feature_extractor as F
 from models import ops
-from dataset import FBP_dataset, FBP_dataset_V2, AFAD, Label_Sampler
+from dataset import FBP_dataset_V2, Label_Sampler
 import utils
+from config import load_config
 
 
 
@@ -233,96 +238,6 @@ class Trainer:
         self.generator.train()
 
         return result
-
-
-
-def load_config(root_dir):
-    config = OrderedDict()
-
-    config['train'] = 'Generator'
-    config['use_gpu'] = True
-
-    # Hyper-parameters
-    config['batch_size'] = 16
-    config['max_epoch'] = 150
-    config['lr'] = 1e-4
-    config['lr_decay'] = 0.3
-    config['lr_decay_epoch'] = 50
-    config['alpha_g'] = 0.8    # weights of generator training against discriminator
-    config['alpha_d'] = 0.8    # weights of discriminator training with real samples
-    config['feature_loss_weight'] = 0.5
-    config['reg_loss_weight'] = 1.5
-    config['cycle_g_loss'] = 0.05
-    # Log
-    config['log_step'] = 10
-    config['image_save_step'] = 100
-    config['num_visualize_images'] = 5   # num of generated images to be saved
-    config['cpt_save_epoch'] = 10
-    config['cpt_save_min_epoch'] = 100
-
-    # Pretrained feature extractor and regressor
-    feature_networks = ['resnet50_ft_dag', 'senet50_256', 'vgg_face_dag', 'vgg_m_face_bn_dag']
-    config['pretrained_path'] = os.path.join(root_dir, 'Pretrained_models')
-    config['feature_model'] = feature_networks[3]
-    config['feature_layer'] = 5    # 1 to 5, define which output layer of pretrained model to be used as feature
-    config['cycle_layer'] = 2    # 1 to 5, define which output layer of pretrained model to be used as feature
-    config['regressor_path'] = os.path.join(config['pretrained_path'], 'pretrained_regressor_V2.pth')
-
-    # Dataset
-    config['SCUT-FBP-V2'] = os.path.join(root_dir, 'SCUT-FBP5500_v2')
-    config['AFAD'] = os.path.join(root_dir, 'AFAD_Lite')
-    config['img_size'] = 236
-    config['crop_size'] = 224
-    #config['c_samples'] = 2000
-    #config['d_samples'] = 4000
-    #config['u_samples'] = 20000
-    #config['train_samples'] = 1800
-    #config['test_samples'] = 200
-    config['sample_range'] = [1.0, 5.0]
-    index_file = os.path.join(config['SCUT-FBP-V2'], 'data_index_1800_200.pkl')
-    with open(index_file, 'rb') as readFile:
-        data_index = pickle.load(readFile)
-    config['train_index'] = data_index['train']
-    config['test_index'] = data_index['test']
-    # Train and test set
-    #config['c_index'] = np.arange(config['c_samples'])
-    #female_index = np.load( os.path.join(config['AFAD'], 'female_index.npy') )
-    #config['d_index'], config['u_index'], config['test_index'], _ = \
-    #    np.split(female_index, [config['d_samples'], config['d_samples']+config['u_samples'], \
-    #        config['d_samples']+config['u_samples']+config['test_samples']])
-
-    # Create directory to save result
-    date_time = datetime.now()
-    time_str = date_time.strftime("%Y%m%d_%H-%M-%S")
-    result_path = os.path.join(root_dir, 'Result', config['train'])
-    if not os.path.exists(result_path):
-        os.mkdir(result_path)
-    result_path = os.path.join(result_path, time_str)
-    os.mkdir(result_path)
-    config['result_path'] = result_path
-
-    # Save config in pkl file
-    pk_file = os.path.join(result_path, 'config.pkl')
-    with open(pk_file, 'wb') as outFile:
-        pickle.dump(config, outFile)
-
-    print('Configuration loaded and saved.')
-
-
-    # Create Tensorboard to save result
-    writer = SummaryWriter(config['result_path'])
-    # Write all configs to tensorboard
-    content = ''
-    for keys,values in config.items():
-            content += keys + ': ' + str(values) + '  \n  \n'
-    writer.add_text('config', content, 0)
-
-    # Save config in txt file
-    txt_file = os.path.join(result_path, 'config.txt')
-    with open(txt_file, 'w') as outFile:
-        outFile.write(content)
-
-    return config, writer
 
 
 
