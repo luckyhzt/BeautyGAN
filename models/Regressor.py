@@ -23,6 +23,15 @@ class Regressor(nn.Module):
             nn.Linear(512, 1),
         )
 
+        # Write architecture to tensorboard
+        if writer != None:
+            title = str(self.__class__.__name__)
+            content = ''
+            for name, layer in self.named_children():
+                content += ' ' + str(name) + ': ' + str(layer) + '\n\n'
+            content = content.replace('\n', '  \n')
+            writer.add_text(title, content, 0)
+
 
     def forward(self, x):
         y = x / 2.0 + 0.5    #from[-1, 1] to [0, 1]

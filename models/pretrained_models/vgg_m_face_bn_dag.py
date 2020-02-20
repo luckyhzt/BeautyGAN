@@ -37,61 +37,88 @@ class Vgg_m_face_bn_dag(nn.Module):
         self.fc8 = nn.Linear(in_features=4096, out_features=2622, bias=True)
 
     def forward(self, x0, output_layer):
+        i = 0
+        num = len(output_layer)
+        output = []
+
         x1 = self.conv1(x0)
-
-        if output_layer == 1:
-            return x1
-
         x2 = self.bn49(x1)
         x3 = self.relu1(x2)
+
+        if output_layer[i] == 1:
+            output.append(x3)
+            i += 1
+            if i == num:
+                return output
+
         x4 = self.pool1(x3)
         x5 = self.conv2(x4)
-
-        if output_layer == 2:
-            return x5
-
         x6 = self.bn50(x5)
         x7 = self.relu2(x6)
+
+        if output_layer[i] == 2:
+            output.append(x7)
+            i += 1
+            if i == num:
+                return output
+
         x8 = self.pool2(x7)
         x9 = self.conv3(x8)
-
-        if output_layer == 3:
-            return x9
-
         x10 = self.bn51(x9)
         x11 = self.relu3(x10)
+
+        if output_layer[i] == 3:
+            output.append(x11)
+            i += 1
+            if i == num:
+                return output
+
         x12 = self.conv4(x11)
-
-        if output_layer == 4:
-            return x12
-
         x13 = self.bn52(x12)
         x14 = self.relu4(x13)
+
+        if output_layer[i] == 4:
+            output.append(x14)
+            i += 1
+            if i == num:
+                return output
+
         x15 = self.conv5(x14)
-
-        if output_layer == 5:
-            return x15
-
         x16 = self.bn53(x15)
         x17 = self.relu5(x16)
+
+        if output_layer[i] == 5:
+            output.append(x17)
+            i += 1
+            if i == num:
+                return output
+
         x18 = self.pool5(x17)
         x19 = self.fc6(x18)
-
-        if output_layer == 6:
-            return x19
-
         x20 = self.bn54(x19)
         x21 = self.relu6(x20)
-        x22 = self.fc7(x21)
 
-        if output_layer == 7:
-            return x22
-        
+        if output_layer[i] == 6:
+            output.append(x21)
+            i += 1
+            if i == num:
+                return output
+
+
+        x22 = self.fc7(x21)
         x23 = self.bn55(x22)
         x24_preflatten = self.relu7(x23)
+
+        if output_layer[i] == 7:
+            output.append(x24_preflatten)
+            i += 1
+            if i == num:
+                return output
+
         x24 = x24_preflatten.view(x24_preflatten.size(0), -1)
         x25 = self.fc8(x24)
         return x25
+        
 
 def vgg_m_face_bn_dag(weights_path=None, **kwargs):
     """
