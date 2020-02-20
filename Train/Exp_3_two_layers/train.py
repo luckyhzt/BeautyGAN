@@ -147,7 +147,6 @@ class Trainer:
             self.scheduler_G.step()
 
 
-    
     def train_discriminator(self, x_d, x_g):
         self.discriminator.train()
 
