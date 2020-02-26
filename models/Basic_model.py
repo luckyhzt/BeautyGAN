@@ -84,6 +84,7 @@ class Condition_IN(nn.Module):
         self.var = nn.Linear(channels, channels)
         self.sigm2 = nn.Sigmoid()
         self.mean = nn.Linear(channels, channels)
+        self.relu_out = nn.ReLU(inplace=True)
     
     def forward(self, x, cond):
         x = self.norm(x)
@@ -94,7 +95,7 @@ class Condition_IN(nn.Module):
         var = var.view(var.size(0), var.size(1), 1, 1)
         mean = mean.view(mean.size(0), mean.size(1), 1, 1)
 
-        return x * var + mean
+        return self.relu_out( x * var + mean )
 
 
 

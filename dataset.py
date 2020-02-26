@@ -318,9 +318,9 @@ class AFAD(Data.Dataset):
 
 
 class Label_Sampler():
-    def __init__(self, sample_range):
-        self.sample_range = sample_range
-        self.prob = [91/1800, 856/1800, 650/1800, 203/1800]
+    def __init__(self, dataset_path, index):
+        #self.prob = [91/1800, 856/1800, 650/1800, 203/1800]
+        self.prob = [0.25, 0.25, 0.25, 0.25]
     
 
     def sample(self, batch_size):
@@ -334,7 +334,28 @@ class Label_Sampler():
         sampled = np.random.rand(batch_size, 1) + np.random.choice(len(self.prob), (batch_size, 1), p=self.prob) + 1
 
         return torch.FloatTensor(sampled)
-    
+
+
+'''class Label_Sampler():
+    def __init__(self, dataset_path, index):
+        self.dataset_path = dataset_path
+
+        pkl_file = os.path.join(self.dataset_path, 'Annotation_crop.pkl')
+        with open(pkl_file, 'rb') as f:
+            self.annotation = pickle.load(f)
+
+        label = []
+        for i in index:
+            ratings = self.annotation[i]['all_ratings']
+            label.append(np.sum(ratings, keepdims=True) / np.count_nonzero(ratings))
+        
+        self.label = np.concatenate(label, axis=0)
+
+    def sample(self, size):
+        sampled = np.random.choice(self.label, (size, 1))
+
+        return torch.FloatTensor(sampled)'''
+
 
 
 

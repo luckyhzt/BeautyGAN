@@ -95,14 +95,17 @@ class Generator(nn.Module):
         ]
         self.down_sample = nn.Sequential(*down_sample_layers)
         
+        # Conditional Instance Norm layer
         self.cond_norm = basic.Condition_IN(1, 512)
+
         # Residual layers
-        #for _ in range(2):
-            #layers += [Residual_block(512, None, use_bias=True)]
+        residual_layers = []
+        for _ in range(config['residual_blocks']):
+            residual_layers += [Residual_block(512, None, use_bias=True)]
+        self.residual =  nn.Sequential(*residual_layers)
 
         # Up-sample layers
         up_sample_layers = [
-            nn.ReLU(inplace=True),
             nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True),
             nn.ReLU(inplace=True),
             nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True),
@@ -125,16 +128,12 @@ class Generator(nn.Module):
             writer.add_text(title, content, 0)
     
 
-    def forward(self, x, cond, cycle=False):
-        if not cycle:
-            x = self.down_sample(x)
-            x = self.cond_norm(x, cond)
-            x = self.up_sample(x)
-            return x
-        elif cycle:
-            x = self.down_sample(x)
-            norm_x = self.cond_norm(x, cond)
-            return x, norm_x
+    def forward(self, x, cond):
+        x = self.down_sample(x)
+        x = self.cond_norm(x, cond)
+        x = self.residual(x)
+        x = self.up_sample(x)
+        return x
 
     
     def save(self, path):

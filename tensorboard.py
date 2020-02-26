@@ -12,4 +12,4 @@ root.withdraw()
 logdir = getDir(root)
 print('\nLog directory: ', logdir, '\n')
 if len(logdir) != 0:
-    os.system('tensorboard --logdir=' + logdir + ' --port=8008')
+    os.system('tensorboard --logdir=' + logdir + ' --port=6006')

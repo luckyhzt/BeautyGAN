@@ -24,10 +24,10 @@ def test():
     label = average_score(label[config['trainset_index'], :])
 
     n = 21
-    index = 12
+    index = 90
 
     # Load trained model
-    gen_path = 'D:/ThesisData/Result/Generator/20200206_10-25-40/generator_520.pth'
+    gen_path = 'D:/Program/BeautyGAN/Train/Exp_3_cycle/Result/Exp_3/generator_240.pth'
     generator = G.Generator(config, None)
     generator.cuda()
     generator.load(gen_path)

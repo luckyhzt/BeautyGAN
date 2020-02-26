@@ -107,12 +107,10 @@ class Trainer:
                 # Train Discriminator
                 d_loss_d, d_loss_g, d_loss = self.train_discriminator(x_d, x_g)
                 # Train Generator
-                g_loss_d, g_loss_feat, g_loss_cycle, g_loss_r, g_loss = self.train_generator(x_u, x_g, y_g)
-                # Train Generator with Cycle loss
-                #g_loss_cycle = self.train_generator_cycle(x_c, y_c)
+                g_loss_d, g_loss_feat_2, g_loss_feat_5, g_loss_r, g_loss = self.train_generator(x_u, x_g, y_g)
 
                 elapsed = time.time() - start
-                run_vars.add([d_loss_d, d_loss_g, g_loss_d, g_loss_feat, g_loss_r, g_loss_cycle, elapsed])
+                run_vars.add([d_loss_d, d_loss_g, g_loss_d, g_loss_feat_2, g_loss_feat_5, g_loss_r, elapsed])
                 
                 # Print log
                 if step % config['log_step'] == 0:
@@ -120,14 +118,14 @@ class Trainer:
                     run_vars.clear()
                     for i in range(6):
                         var[i] = torch.sqrt(var[i])
-                    print('epoch {} step {},   d_real: {:.4f}   d_g: {:.4f}-{:.4f}-f: {:.4f}   g_r: {:.4f}   g_cyc: {:.4f} --- {:.2f} samples/sec' 
+                    print('epoch {} step {},   d_real: {:.4f}   d_g: {:.4f}-{:.4f}-f2: {:.4f}-f5: {:.4f}   g_r: {:.4f}   --- {:.2f} samples/sec' 
                         .format(e, step, var[0], var[1], var[2], var[3], var[4], var[5], config['batch_size']/var[6] ))
                     # Save result
                     writer.add_scalar('GAN/real', var[0], step)
                     writer.add_scalars('GAN/gen_vs_disc', {'d': var[1], 'g': var[2]}, step)
-                    writer.add_scalar('GAN/feature_loss', var[3], step)
-                    writer.add_scalar('GAN/reg_loss', var[4], step)
-                    writer.add_scalar('GAN/cycle_loss', var[5], step)
+                    writer.add_scalar('GAN/feature_loss_2', var[3], step)
+                    writer.add_scalar('GAN/feature_loss_5', var[4], step)
+                    writer.add_scalar('GAN/reg_loss', var[5], step)
                 
                 # Save generated images
                 if step % config['image_save_step'] == 0:
@@ -173,44 +171,25 @@ class Trainer:
         self.optim_G.zero_grad()
         # Forward
         g_output_d = self.discriminator(x_g)
-        g_cycle, g_feat = self.feature(x_g, config['feature_layer'])
-        u_cycle, u_feat = self.feature(x_u, config['feature_layer'])
+        g_feat_2, g_feat_5 = self.feature(x_g, config['feature_layer'])
+        u_feat_2, u_feat_5 = self.feature(x_u, config['feature_layer'])
         g_output_r = self.regressor(x_g)
         # Loss
         g_loss_d = L.adversarial_loss(g_output_d, True)
-        g_loss_feat = L.MSELoss(g_feat, u_feat)
-        g_loss_cycle = L.MSELoss(g_cycle, u_cycle)
+        g_loss_feat_2 = L.MSELoss(g_feat_2, u_feat_2)
+        g_loss_feat_5 = L.MSELoss(g_feat_5, u_feat_5)
         g_loss_r = L.MSELoss(g_output_r, y_g)
-        g_loss = config['alpha_g']*g_loss_d + config['feature_loss_weight']*g_loss_feat + config['reg_loss_weight']*g_loss_r + \
-            config['cycle_g_loss'] * g_loss_cycle
+        g_loss = config['alpha_g']*g_loss_d + config['feature_loss_weight_2']*g_loss_feat_2 + config['reg_loss_weight']*g_loss_r + \
+            config['feature_loss_weight_5'] * g_loss_feat_5
         # Backward
         g_loss.backward()
         self.optim_G.step()
 
         self.discriminator.train()
 
-        return g_loss_d, g_loss_feat, g_loss_cycle, g_loss_r, g_loss
+        return g_loss_d, g_loss_feat_2, g_loss_feat_5, g_loss_r, g_loss
 
     
-    def train_generator_cycle(self, x_d, y_d):
-        self.generator.train()
-
-        self.optim_G.zero_grad()
-        # Forward
-        x, x_norm = self.generator(x_d, y_d, cycle=True)
-        #g_cycle = self.feature(x_g, config['cycle_layer'])
-        #d_cycle = self.feature(x_d, config['cycle_layer'])
-        # Loss
-        #g_loss_cycle = L.MSELoss(g_cycle, d_cycle)
-        g_loss_cycle = L.MSELoss(x_norm, x)
-        g_loss = config['cycle_g_loss'] * g_loss_cycle
-        # Backward
-        g_loss.backward()
-        self.optim_G.step()
-
-        return g_loss_cycle
-
-
     def eval_generator(self, x_g):
         self.generator.eval()
         # Forward one image into generator for n times with different label

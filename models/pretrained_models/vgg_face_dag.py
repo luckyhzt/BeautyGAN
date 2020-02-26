@@ -49,6 +49,7 @@ class Vgg_face_dag(nn.Module):
         self.dropout7 = nn.Dropout(p=0.5)
         self.fc8 = nn.Linear(in_features=4096, out_features=2622, bias=True)
 
+
     def forward(self, x0, output_layer):
         x1 = self.conv1_1(x0)
         x2 = self.relu1_1(x1)
