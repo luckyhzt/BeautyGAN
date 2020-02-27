@@ -7,9 +7,27 @@ def getDir(root):
     logdir = filedialog.askdirectory(parent=root)
     return logdir
 
+
+def run_tensorboard(event):
+    port = entry.get()
+    root.quit()
+    root.destroy()
+    if len(logdir) != 0:
+        os.system('tensorboard --logdir=' + logdir + ' --port=' + port)
+
+
 root = tk.Tk()
-root.withdraw()
+lbl = tk.Label(root)
+lbl.grid(column=0, row=0, columnspan=2)
+tk.Label(root, text='Port: ').grid(column=0, row=1)
+entry = tk.Entry(root)
+entry.grid(column=1, row=1)
 logdir = getDir(root)
-print('\nLog directory: ', logdir, '\n')
-if len(logdir) != 0:
-    os.system('tensorboard --logdir=' + logdir + ' --port=6006')
+lbl.config(text = '\nLog directory: ' + logdir)
+
+root.bind('<Return>', run_tensorboard)
+
+root.focus_force()
+entry.focus_set()
+
+root.mainloop()

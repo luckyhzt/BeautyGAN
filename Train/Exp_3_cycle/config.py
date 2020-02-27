@@ -27,8 +27,8 @@ def load_config(root_dir):
     config['alpha_g'] = 1.0    # weights of generator training against discriminator
     config['alpha_d'] = 1.0    # weights of discriminator training with real samples
     config['feature_loss_weight'] = 0.8
-    config['reg_loss_weight'] = 1.0
-    config['cycle_loss_weight'] = 0.06
+    config['reg_loss_weight'] = 1.5
+    config['cycle_loss_weight'] = 0.08
     config['residual_blocks'] = 4
 
     # Log
