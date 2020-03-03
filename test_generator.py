@@ -20,36 +20,40 @@ import models.Loss as L
 
 
 def test():
-    label = np.load(config['label_path'])
-    label = average_score(label[config['trainset_index'], :])
-
-    n = 21
-    index = 90
-
     # Load trained model
-    gen_path = 'D:/Program/BeautyGAN/Train/Exp_3_cycle/Result/Exp_3/generator_240.pth'
-    generator = G.Generator(config, None)
-    generator.cuda()
-    generator.load(gen_path)
+    
+    exps = [11, 13, 14, 15]
 
-    # Dataset
-    #dataset = FBP_dataset_V2(config['uimg_path'], config['unlabel_index'])
-    dataset = FBP_dataset('train', config['limg_path'], config['testset_index'], config['label_path'], \
-        config['img_size'], config['crop_size'])
+    for e in exps:
+        gen_path = 'D:/Program/BeautyGAN/Train/Exp_3_cycle/Result/Exp_' + str(e) + '/generator_300.pth'
+        generator = G.Generator(config, None)
+        generator.cuda()
+        generator.load(gen_path)
 
-    # Test
-    x, _ = dataset[index]
-    x = x.unsqueeze(0)
-    x = x.cuda()
-    display_img(x.squeeze(0), 'original')
-    for i in range (n):
+        # Dataset
+        testset = FBP_dataset_V2('test', config['SCUT-FBP-V2'], config['test_index'], config['img_size'], config['crop_size'])
+        index = 120
+        n = 10
+
+        # Test
+        x, y = testset[index]
+        x = x.unsqueeze(0)
+        x = x.cuda()
+        #display_img(x.squeeze(0) / 2.0 + 0.5, 'original')
+        save_img(x.squeeze(0) / 2.0 + 0.5, 'C:/Users/Zhitong Huang/iCloudDrive/Documents/Thesis/Images/origin_' + str(index) + '.png')
+
         gap = 4/(n-1)
-        score = np.float32( gap * i + 1.0 )
-        times = ((score-gap/2 <= label) & (label < score+gap/2)).sum()
-        y = torch.cuda.FloatTensor([[score]])
-        x_g = generator(x, y)
-        display_img(x_g.squeeze(0), "{:.2f}".format(score) + '  ' +str(times))
-    cv2.waitKey(0)
+        score = np.arange(n)
+        score = gap * score + 1.0
+        score = score.reshape([n, 1])
+        y_g = torch.cuda.FloatTensor(score)
+        x = x.repeat(n, 1, 1, 1)
+        x_g = generator(x, y_g)
+        gen_img = torchvision.utils.make_grid(x_g / 2.0 + 0.5, padding=10, nrow=5)
+        #display_img(gen_img, 'generated')
+        save_img(gen_img, 'C:/Users/Zhitong Huang/iCloudDrive/Documents/Thesis/Images/' + str(index) + '_' + str(e) + '.png')
+
+        #cv2.waitKey(0)
 
 
 
@@ -59,21 +63,17 @@ def load_config():
     thisDir = os.path.dirname(__file__)
 
     # Dataset
-    config['label_path'] = 'D:/ThesisData/SCUT-FBP/Label/label.npy'
-    config['limg_path'] = 'D:/ThesisData/SCUT-FBP/Pad_Square'
     config['SCUT-FBP-V2'] = 'D:/ThesisData/SCUT-FBP5500_v2'
     config['img_size'] = 236
     config['crop_size'] = 224
-    config['train_samples'] = 400
-    config['test_samples'] = 100
     config['unlabel_samples'] = 2000
     # Train and test set
-    num_images = 500
-    img_index = np.arange(num_images)
-    #np.random.shuffle(img_index)
-    config['trainset_index'] = img_index[:config['train_samples']]
-    config['testset_index'] = img_index[config['train_samples']:]
-    config['unlabel_index'] = np.arange(config['unlabel_samples'])
+    index_file = os.path.join(config['SCUT-FBP-V2'], 'data_index_1800_200.pkl')
+    with open(index_file, 'rb') as readFile:
+        data_index = pickle.load(readFile)
+    config['train_index'] = data_index['train']
+    config['test_index'] = data_index['test']
+    config['residual_blocks'] = 4
 
     return config
 
@@ -82,9 +82,21 @@ def load_config():
 def display_img(x, name):
     img = x.data.cpu().numpy()
     img = np.moveaxis(img, 0, -1)
-    img = ( (img + 1.0) / 2.0 * 255 ).astype(np.uint8)
+    img = ( img * 255.0 ).astype(np.uint8)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     cv2.imshow(name, img)
+    #fig, ax = plt.subplots()
+    #ax.imshow(img)
+    #plt.show()
+    cv2.im
+
+
+def save_img(x, name):
+    img = x.data.cpu().numpy()
+    img = np.moveaxis(img, 0, -1)
+    img = ( img * 255.0 ).astype(np.uint8)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(name, img)
 
 
 def average_score(label):
