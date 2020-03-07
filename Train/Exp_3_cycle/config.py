@@ -16,22 +16,20 @@ from torch.utils.tensorboard import SummaryWriter
 def load_config(root_dir):
     config = OrderedDict()
 
-    config['comments'] = "No random horizontal flip for training samples"
-
     config['use_gpu'] = True
 
     # Hyper-parameters
     config['batch_size'] = 16
-    config['max_epoch'] = 300
+    config['max_epoch'] = 350
     config['lr'] = 1e-4
-    config['lr_decay'] = 0.2
+    config['lr_decay'] = 0.3
     config['lr_decay_epoch'] = 100
     config['alpha_g'] = 1.0    # weights of generator training against discriminator
     config['alpha_d'] = 1.0    # weights of discriminator training with real samples
     config['feature_loss_weight'] = 0.8
-    config['reg_loss_weight'] = 1.5
+    config['reg_loss_weight'] = 1.0
     config['cycle_loss_weight'] = 0.08
-    config['residual_blocks'] = 4
+    config['residual_blocks'] = 6
 
     # Log
     config['log_step'] = 10

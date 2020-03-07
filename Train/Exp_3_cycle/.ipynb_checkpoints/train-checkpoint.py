@@ -256,8 +256,8 @@ def main():
     trainer = Trainer(train_loader_d, train_loader_u, train_loader_c, test_loader, sampler)
 
     # Lauch Tensorboard
-    #t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
-    #t.start()
+    t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
+    t.start()
 
     # Start training
     trainer.train()
