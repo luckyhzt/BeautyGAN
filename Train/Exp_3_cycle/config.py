@@ -20,16 +20,16 @@ def load_config(root_dir):
 
     # Hyper-parameters
     config['batch_size'] = 16
-    config['max_epoch'] = 350
+    config['max_epoch'] = 150
     config['lr'] = 1e-4
     config['lr_decay'] = 0.3
-    config['lr_decay_epoch'] = 100
+    config['lr_decay_epoch'] = 50
     config['alpha_g'] = 1.0    # weights of generator training against discriminator
     config['alpha_d'] = 1.0    # weights of discriminator training with real samples
-    config['feature_loss_weight'] = 0.8
-    config['reg_loss_weight'] = 1.0
-    config['cycle_loss_weight'] = 0.08
-    config['residual_blocks'] = 6
+    config['identity_loss_weight'] = 0.8
+    config['beauty_loss_weight'] = 1.5
+    config['consist_loss_weight'] = 0.08
+    config['residual_blocks'] = 4
 
     # Log
     config['log_step'] = 10
@@ -37,14 +37,14 @@ def load_config(root_dir):
     config['num_visualize_images'] = 5   # num of generated images to be saved
     # Save checkpoint
     config['cpt_save_epoch'] = 10
-    config['cpt_save_min_epoch'] = 200
+    config['cpt_save_min_epoch'] = 100
 
     # Pretrained feature extractor and regressor
     feature_networks = ['resnet50_ft_dag', 'senet50_256', 'vgg_face_dag', 'vgg_m_face_bn_dag']
     config['pretrained_path'] = os.path.join(root_dir, 'Pretrained_models')
     config['feature_model'] = feature_networks[3]
-    config['feature_layer'] = [5]    # 1 to 5, define which output layer of pretrained model to be used as feature
-    config['cycle_layer'] = [2]
+    config['identity_layer'] = [5]    # 1 to 5, define which output layer of pretrained model to be used as feature
+    config['consist_layer'] = [0]
     config['regressor_path'] = os.path.join(config['pretrained_path'], 'pretrained_regressor_V2.pth')
 
     # Dataset

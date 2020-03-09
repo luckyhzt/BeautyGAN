@@ -1,11 +1,12 @@
 
 import torch
 import torch.nn as nn
+import numpy as np
 
 
 class Vgg_m_face_bn_dag(nn.Module):
 
-    def __init__(self):
+    def __init__(self, use_cuda):
         super(Vgg_m_face_bn_dag, self).__init__()
         self.meta = {'mean': [131.45376586914062, 103.98748016357422, 91.46234893798828],
                      'std': [1, 1, 1],
@@ -35,12 +36,33 @@ class Vgg_m_face_bn_dag(nn.Module):
         self.bn55 = nn.BatchNorm2d(4096, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         self.relu7 = nn.ReLU(inplace=True)
         self.fc8 = nn.Linear(in_features=4096, out_features=2622, bias=True)
+        # Normalization
+        mean = np.array(self.meta['mean'], dtype=np.float32)
+        std = np.array(self.meta['std'], dtype=np.float32)
+        self.norm_mean = torch.from_numpy(mean).view(1, -1, 1, 1)
+        self.norm_std = torch.from_numpy(std).view(1, -1, 1, 1)
+        if use_cuda:
+            self.norm_mean = self.norm_mean.cuda()
+            self.norm_std = self.norm_std.cuda()
+
 
     def forward(self, x0, output_layer):
         i = 0
         num = len(output_layer)
         output = []
 
+        if output_layer[i] == 0:
+            output.append(x0)
+            i += 1
+            if i == num:
+                return output
+
+        # Pre-processing
+        x0 = x0 / 2.0 + 0.5    # from [-1,1] to [0,1]
+        x0 = x0 * 255.0   # from [0,1] to [0,255]
+        x0 = (x0 - self.norm_mean) / self.norm_std    # normalize
+
+        # Network Forward
         x1 = self.conv1(x0)
         x2 = self.bn49(x1)
         x3 = self.relu1(x2)
@@ -120,14 +142,14 @@ class Vgg_m_face_bn_dag(nn.Module):
         return x25
         
 
-def vgg_m_face_bn_dag(weights_path=None, **kwargs):
+def vgg_m_face_bn_dag(use_cuda, weights_path=None, **kwargs):
     """
     load imported model instance
 
     Args:
         weights_path (str): If set, loads model weights from the given path
     """
-    model = Vgg_m_face_bn_dag()
+    model = Vgg_m_face_bn_dag(use_cuda)
     if weights_path:
         state_dict = torch.load(weights_path)
         model.load_state_dict(state_dict)

@@ -36,7 +36,7 @@ class Trainer:
         self.regressor = R.Regressor(config, writer)
         self.generator = G.Generator(config, writer)
         self.discriminator = D.PatchDiscriminator(config, writer)
-        self.feature = F.Feature_extractor(config['feature_model'], config['pretrained_path'])
+        self.feature = F.Feature_extractor(config)
         # Data
         self.train_loader_d = train_loader_d
         self.train_loader_u = train_loader_u
@@ -92,28 +92,29 @@ class Trainer:
                 # Get data
                 x_d, _ = train_iter_d.next()
                 x_u, _ = train_iter_u.next()
-                x_c, y_c = train_iter_c.next()
                 y_g = self.label_sampler.sample(x_u.size(0))
+                x_c, y_c = train_iter_c.next()
 
                 # Put in GPU
                 if self.use_cuda:
                     x_d = x_d.cuda()
-                    x_u = x_u.cuda(); y_g = y_g.cuda()
+                    x_u = x_u.cuda()
+                    y_g = y_g.cuda()
                     x_c = x_c.cuda(); y_c = y_c.cuda()
                 
                 #========== Train ==========
-                if e == 150: config['reg_loss_weight'] = 1.5
+                if e == 150: config['beauty_loss_weight'] = 1.5
                 x_g = self.generator(x_u, y_g)
 
                 # Train Discriminator
                 d_loss_d, d_loss_g, d_loss = self.train_discriminator(x_d, x_g)
                 # Train Generator
-                g_loss_d, g_loss_feat, g_loss_r, g_loss = self.train_generator(x_u, x_g, y_g)
+                g_loss_d, g_loss_id, g_loss_r, g_loss = self.train_generator(x_u, x_g, y_g)
                 # Train Generator with Cycle loss
-                g_loss_cycle = self.train_generator_cycle(x_c, y_c)
+                g_loss_consist = self.train_generator_consist(x_c, y_c)
 
                 elapsed = time.time() - start
-                run_vars.add([d_loss_d, d_loss_g, g_loss_d, g_loss_feat, g_loss_r, g_loss_cycle, elapsed])
+                run_vars.add([d_loss_d, d_loss_g, g_loss_d, g_loss_id, g_loss_r, g_loss_consist, elapsed])
                 
                 # Print log
                 if step % config['log_step'] == 0:
@@ -121,14 +122,14 @@ class Trainer:
                     run_vars.clear()
                     for i in range(6):
                         var[i] = torch.sqrt(var[i])
-                    print('epoch {} step {},   d_real: {:.4f}   d_g: {:.4f}-{:.4f}-f: {:.4f}   g_r: {:.4f}   g_cyc: {:.4f} --- {:.2f} samples/sec' 
+                    print('epoch {} step {},   d_real: {:.4f}   d_g: {:.4f}-{:.4f}-id: {:.4f}   beauty: {:.4f}   consist: {:.4f} --- {:.2f} samples/sec' 
                         .format(e, step, var[0], var[1], var[2], var[3], var[4], var[5], config['batch_size']/var[6] ))
                     # Save result
                     writer.add_scalar('GAN/real', var[0], step)
                     writer.add_scalars('GAN/gen_vs_disc', {'d': var[1], 'g': var[2]}, step)
-                    writer.add_scalar('GAN/feature_loss', var[3], step)
-                    writer.add_scalar('GAN/reg_loss', var[4], step)
-                    writer.add_scalar('GAN/cycle_loss', var[5], step)
+                    writer.add_scalar('GAN/identity_loss', var[3], step)
+                    writer.add_scalar('GAN/beauty_loss', var[4], step)
+                    writer.add_scalar('GAN/consist_loss', var[5], step)
                 
                 # Save generated images
                 if step % config['image_save_step'] == 0:
@@ -174,14 +175,14 @@ class Trainer:
         self.optim_G.zero_grad()
         # Forward
         g_output_d = self.discriminator(x_g)
-        g_feat = self.feature(x_g, config['feature_layer'])[0]
-        u_feat = self.feature(x_u, config['feature_layer'])[0]
+        g_feat = self.feature(x_g, config['identity_layer'])[0]
+        u_feat = self.feature(x_u, config['identity_layer'])[0]
         g_output_r = self.regressor(x_g)
         # Loss
         g_loss_d = L.adversarial_loss(g_output_d, True)
         g_loss_feat = L.MSELoss(g_feat, u_feat)
         g_loss_r = L.MSELoss(g_output_r, y_g)
-        g_loss = config['alpha_g']*g_loss_d + config['feature_loss_weight']*g_loss_feat + config['reg_loss_weight']*g_loss_r
+        g_loss = config['alpha_g']*g_loss_d + config['identity_loss_weight']*g_loss_feat + config['beauty_loss_weight']*g_loss_r
         # Backward
         g_loss.backward()
         self.optim_G.step()
@@ -191,22 +192,22 @@ class Trainer:
         return g_loss_d, g_loss_feat, g_loss_r, g_loss
 
     
-    def train_generator_cycle(self, x_c, y_c):
+    def train_generator_consist(self, x_c, y_c):
         self.generator.train()
 
         self.optim_G.zero_grad()
         # Forward
         x_g = self.generator(x_c, y_c)
-        #g_feat = self.feature(x_g, config['cycle_layer'])[0]
-        #c_feat = self.feature(x_c, config['cycle_layer'])[0]
+        g_feat = self.feature(x_g, config['consist_layer'])[0]
+        c_feat = self.feature(x_c, config['consist_layer'])[0]
         # Loss
-        g_loss_cycle = L.MSELoss(x_g, x_c)
-        g_loss = config['cycle_loss_weight'] * g_loss_cycle
+        g_loss_consist = L.MSELoss(g_feat, c_feat)
+        g_loss = config['consist_loss_weight'] * g_loss_consist
         # Backward
         g_loss.backward()
         self.optim_G.step()
 
-        return g_loss_cycle
+        return g_loss_consist
 
 
     def eval_generator(self, x_g):
