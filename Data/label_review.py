@@ -12,16 +12,18 @@ def main():
     annotation = pickle.load( open(path, 'rb') )
     
     label = []
-    for i in range(1800):
+    for i in range(2000):
         ratings = annotation[i]['all_ratings']
         score = np.sum(ratings) / np.count_nonzero(ratings)
         label.append(score)
     
     label = np.array(label).reshape(-1, 1)
 
-    label = label_level(label, 4)
-    dist = np.sum(label, axis=0)
-    print(dist)
+    #label = label_level(label, 4)
+    #dist = np.sum(label, axis=0)
+    #print(dist)
+
+    print(np.count_nonzero( (label >= 1.5) & (label <= 4.0) ))
 
 
 

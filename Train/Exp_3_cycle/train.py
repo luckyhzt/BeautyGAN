@@ -103,7 +103,6 @@ class Trainer:
                     x_c = x_c.cuda(); y_c = y_c.cuda()
                 
                 #========== Train ==========
-                if e == 150: config['beauty_loss_weight'] = 1.5
                 x_g = self.generator(x_u, y_g)
 
                 # Train Discriminator
