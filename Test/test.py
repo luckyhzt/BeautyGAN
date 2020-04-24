@@ -1,10 +1,14 @@
+import os
+import sys
+thisDir = os.path.dirname(__file__)
+sys.path.append(os.path.abspath(os.path.join(thisDir, os.pardir)))
+
 import torch
 from torch.utils import data as Data
 import torchvision
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-import os
 from datetime import datetime
 from collections import OrderedDict
 import PIL
@@ -19,10 +23,26 @@ import models.Regressor as R
 import models.Loss as L
 
 
-def test():
-    # Load trained model
+def load_config():
+    thisDir = os.path.dirname(__file__)
+    result_path = 'D:/Program/BeautyGAN/Train/Exp_3_cycle/Result'
+    experiment = 'Exp_11'
+    param = 'generator_300.pth'
+
+    exp_path = os.path.join(result_path, experiment)
+    with open(os.path.join(exp_path, 'config.pkl'), 'rb') as readFile:
+        config = pickle.load(readFile)
     
+    config['exp_path'] = exp_path
+    config['param_path'] = os.path.join(exp_path, param)
+
+    return config
+
+
+def compare():
+    # Load trained model
     exps = [11, 13, 14, 15]
+    all_images = []
 
     for e in exps:
         gen_path = 'D:/Program/BeautyGAN/Train/Exp_3_cycle/Result/Exp_' + str(e) + '/generator_300.pth'
@@ -33,49 +53,28 @@ def test():
         # Dataset
         testset = FBP_dataset_V2('test', config['SCUT-FBP-V2'], config['test_index'], config['img_size'], config['crop_size'])
         index = 120
-        n = 10
+        n = 7
 
         # Test
         x, y = testset[index]
         x = x.unsqueeze(0)
         x = x.cuda()
-        #display_img(x.squeeze(0) / 2.0 + 0.5, 'original')
-        save_img(x.squeeze(0) / 2.0 + 0.5, 'C:/Users/Zhitong Huang/iCloudDrive/Documents/Thesis/Images/origin_' + str(index) + '.png')
 
-        gap = 4/(n-1)
+        gap = 3.6/(n-1)
         score = np.arange(n)
-        score = gap * score + 1.0
+        score = gap * score + 1.2
         score = score.reshape([n, 1])
         y_g = torch.cuda.FloatTensor(score)
-        x = x.repeat(n, 1, 1, 1)
+        x_g = x.repeat(n, 1, 1, 1)
         x_g = generator(x, y_g)
-        gen_img = torchvision.utils.make_grid(x_g / 2.0 + 0.5, padding=10, nrow=5)
-        #display_img(gen_img, 'generated')
-        save_img(gen_img, 'C:/Users/Zhitong Huang/iCloudDrive/Documents/Thesis/Images/' + str(index) + '_' + str(e) + '.png')
+        output = torch.cat([x, x_g], dim=0)
+        all_images.append(output)
+    
+    all_images = torch.cat(all_images, dim=0)
+    gen_img = torchvision.utils.make_grid(all_images / 2.0 + 0.5, padding=10, nrow=8)
+    display_img(gen_img, 'generated')
 
-        #cv2.waitKey(0)
-
-
-
-def load_config():
-    config = OrderedDict()
-
-    thisDir = os.path.dirname(__file__)
-
-    # Dataset
-    config['SCUT-FBP-V2'] = 'D:/ThesisData/SCUT-FBP5500_v2'
-    config['img_size'] = 236
-    config['crop_size'] = 224
-    config['unlabel_samples'] = 2000
-    # Train and test set
-    index_file = os.path.join(config['SCUT-FBP-V2'], 'data_index_1800_200.pkl')
-    with open(index_file, 'rb') as readFile:
-        data_index = pickle.load(readFile)
-    config['train_index'] = data_index['train']
-    config['test_index'] = data_index['test']
-    config['residual_blocks'] = 4
-
-    return config
+    cv2.waitKey(0)
 
 
 
@@ -88,7 +87,6 @@ def display_img(x, name):
     #fig, ax = plt.subplots()
     #ax.imshow(img)
     #plt.show()
-    cv2.im
 
 
 def save_img(x, name):
@@ -111,4 +109,4 @@ def average_score(label):
 
 if __name__ == '__main__':
     config = load_config()
-    test()
+    compare()

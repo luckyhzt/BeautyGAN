@@ -83,7 +83,7 @@ class Generator(nn.Module):
 
         # Down-sample layers
         down_sample_layers = [
-            #nn.InstanceNorm2d(3),
+            nn.InstanceNorm2d(3),
             nn.ReflectionPad2d(3),
             nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=0, bias=True),
             nn.ReLU(inplace=True),
