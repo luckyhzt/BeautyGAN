@@ -27,13 +27,13 @@ def load_config(root_dir):
     config['alpha_g'] = 1.0    # weights of generator training against discriminator
     config['alpha_d'] = 1.0    # weights of discriminator training with real samples
     config['identity_loss_weight'] = 0.8
-    config['beauty_loss_weight'] = 1.3
+    config['beauty_loss_weight'] = 1.0
     config['consist_loss_weight'] = 0.08
     config['residual_blocks'] = 4
 
     # Log
     config['log_step'] = 10
-    config['image_save_step'] = 100
+    config['eval_step'] = 100
     config['num_visualize_images'] = 5   # num of generated images to be saved
     # Save checkpoint
     config['cpt_save_epoch'] = 10

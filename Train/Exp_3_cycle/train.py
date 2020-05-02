@@ -126,16 +126,20 @@ class Trainer:
                     # Save result
                     writer.add_scalar('GAN/real', var[0], step)
                     writer.add_scalars('GAN/gen_vs_disc', {'d': var[1], 'g': var[2]}, step)
-                    writer.add_scalar('GAN/identity_loss', var[3], step)
-                    writer.add_scalar('GAN/beauty_loss', var[4], step)
+                    writer.add_scalars('GAN/identity_loss', {'train': var[3]}, step)
+                    writer.add_scalars('GAN/beauty_loss', {'train': var[4]}, step)
                     writer.add_scalar('GAN/consist_loss', var[5], step)
                 
                 # Save generated images
-                if step % config['image_save_step'] == 0:
+                if step % config['eval_step'] == 0:
                     # Eval generator
                     gen_imgs = self.eval_generator(x_u[0:1,:,:,:])
                     image_grid = torchvision.utils.make_grid(gen_imgs / 2.0 + 0.5, padding=15, nrow=config['num_visualize_images'])
                     writer.add_image('generated_images', image_grid, step)
+                    # Eval identity and beauty loss
+                    identity_loss, beauty_loss = self.eval_loss()
+                    writer.add_scalars('GAN/identity_loss', {'test': identity_loss}, step)
+                    writer.add_scalars('GAN/beauty_loss', {'test': beauty_loss}, step)
                     # Print memory info
                     print('\nMemory allocated:', torch.cuda.max_memory_cached(0), '\n')
                 
@@ -238,6 +242,35 @@ class Trainer:
         return result
 
 
+    def eval_loss(self):
+        self.generator.eval()
+
+        test_iter = iter(self.test_loader)
+        identity_loss = 0
+        beauty_loss = 0
+
+        for i in range(len(self.test_loader)):
+            x, _ = test_iter.next()
+            x = x.cuda()
+            y_g = self.label_sampler.sample(x.size(0)).cuda()
+            x_g = self.generator(x, y_g).detach_()
+            # Calculate identity loss
+            u_feat = self.feature(x, config['identity_layer'])[0].detach_()
+            g_feat = self.feature(x_g, config['identity_layer'])[0].detach_()
+            identity_loss += L.MSELoss(g_feat, u_feat) * x.size(0)
+            # Calculate beauty loss
+            y_g_g = self.regressor(x_g).detach_()
+            beauty_loss += L.MSELoss(y_g_g, y_g) * x.size(0)
+
+        identity_loss = identity_loss / len(self.test_loader.dataset)
+        beauty_loss = beauty_loss / len(self.test_loader.dataset)
+        
+        self.generator.train()
+
+        return torch.sqrt(identity_loss), torch.sqrt(beauty_loss)
+
+        
+
 
 def main():
     # Create dataset
@@ -256,8 +289,8 @@ def main():
     trainer = Trainer(train_loader_d, train_loader_u, train_loader_c, test_loader, sampler)
 
     # Lauch Tensorboard
-    #t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
-    #t.start()
+    t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
+    t.start()
 
     # Start training
     trainer.train()

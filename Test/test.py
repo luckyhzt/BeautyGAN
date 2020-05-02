@@ -29,13 +29,50 @@ def main():
     generator = G.Generator(config, None)
     generator.cuda()
     generator.load(config['param_path'])
+    generator.eval()
+    # Load face recognition network
+    FRN = F.Feature_extractor(config)
+    FRN.cuda()
+    FRN.eval()
+    # Load face beauty predictor
+    FBP = R.Regressor(config, None)
+    FBP.cuda()
+    FBP.load(config['regressor_path'])
+    FBP.eval()
     # Load dataset
     trainset = FBP_dataset_V2('test', config['SCUT-FBP-V2'], config['train_index'], config['img_size'], config['crop_size'])
     testset = FBP_dataset_V2('test', config['SCUT-FBP-V2'], config['test_index'], config['img_size'], config['crop_size'])
+    sampler = Label_Sampler(config['SCUT-FBP-V2'], config['train_index'])
     # Show result
-    show_index = [120, 121, 122]
-    show_score = np.array([1.5, 2.5, 3.5, 4.5])
-    display_result(generator, testset, show_index, show_score)
+    #show_index = [120, 121, 122]
+    #show_score = np.array([1.5, 2.5, 3.5, 4.5])
+    #display_result(generator, testset, show_index, show_score)
+    # Test idenity loss
+    #beauty_loss, identity_loss = test_loss(generator, FBP, FRN, trainset, sampler, 20)
+    #print(beauty_loss, identity_loss)
+
+
+def test_loss(generator, FBP, FRN, dataset, sampler, num_samples):
+    n = 10
+    beauty_loss = 0
+    identity_loss = 0
+
+    for i in range(0, n):
+        x, y = dataset[i]
+        x = x.unsqueeze(0)
+        x = x.cuda()
+        x_g = x.repeat(num_samples, 1, 1, 1)
+        y_g = sampler.sample(num_samples).cuda()
+        x_g = generator(x_g, y_g)
+        # Calculate beauty loss
+        y_g_g = FBP(x_g)
+        beauty_loss += L.MSELoss(y_g_g, y_g).data.cpu().numpy()
+        # Calculate identity loss
+        u_feat = FRN(x, config['feature_layer'])[0].repeat(num_samples, 1, 1, 1)
+        g_feat = FRN(x_g, config['feature_layer'])[0]
+        identity_loss += L.MSELoss(g_feat, u_feat).data.cpu().numpy()
+
+    return beauty_loss / n, identity_loss / n
 
 
 def display_result(generator, dataset, index, score):
