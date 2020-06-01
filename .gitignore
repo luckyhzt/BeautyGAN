@@ -1,3 +1,4 @@
 .vscode/settings.json
 Result
 *.pth
+/Test/Result_noIN
