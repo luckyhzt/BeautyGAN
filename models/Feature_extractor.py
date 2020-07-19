@@ -3,7 +3,7 @@ import torch
 import os
 import torch.nn as nn
 import numpy as np
-from models.pretrained_models import senet50_256, resnet50_ft_dag, vgg_face_dag, vgg_m_face_bn_dag
+from Models.pretrained_models import senet50_256, resnet50_ft_dag, vgg_face_dag, vgg_m_face_bn_dag
 import PIL
 
 

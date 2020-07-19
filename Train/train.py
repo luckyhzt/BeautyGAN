@@ -1,7 +1,7 @@
 import os
 import sys
 thisDir = os.path.dirname(__file__)
-sys.path.append(os.path.abspath(os.path.join(thisDir, os.pardir, os.pardir)))
+sys.path.append(os.path.abspath(os.path.join(thisDir, os.pardir)))
 
 import numpy as np
 import time
@@ -17,15 +17,15 @@ import pickle
 from collections import OrderedDict
 from torch.utils.tensorboard import SummaryWriter
 
-import models.Discriminator as D
-import models.Generator as G
-import models.Regressor as R
-import models.Loss as L
-import models.Feature_extractor as F
-from models import ops
-from dataset import FBP_dataset_V2, Label_Sampler
-import utils
-from config import load_config
+import Models.Discriminator as D
+import Models.Generator as G
+import Models.Regressor as R
+import Models.Loss as L
+import Models.Feature_extractor as F
+from Models import Ops
+from Dataset import FBP_dataset_V2, Label_Sampler
+import Utils
+from Config import load_config
 
 
 
@@ -73,7 +73,7 @@ class Trainer:
 
         # Start Training
         step = 0
-        run_vars = utils.Running_vars()
+        run_vars = Utils.Running_vars()
 
         print('\nStart training...\n')
         for e in range(config['max_epoch']):
@@ -289,7 +289,7 @@ def main():
     trainer = Trainer(train_loader_d, train_loader_u, train_loader_c, test_loader, sampler)
 
     # Lauch Tensorboard
-    t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
+    t = threading.Thread(target=Utils.launchTensorBoard, args=([config['result_path']]))
     t.start()
 
     # Start training

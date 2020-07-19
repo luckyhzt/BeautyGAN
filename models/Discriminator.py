@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.utils.data as Data
 import torchvision
 import math
-import models.ops as ops
-import models.Basic_model as basic
+import Models.Ops as ops
+import Models.Basic_model as basic
 from torch.nn.utils import weight_norm
 from inspect import signature
 

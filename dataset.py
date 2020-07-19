@@ -9,8 +9,8 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils import data as Data
 
-import models.ops as ops
-import utils
+import Models.Ops as ops
+import Utils
 
 
 class FBP_dataset(Data.Dataset):
@@ -30,7 +30,7 @@ class FBP_dataset(Data.Dataset):
         # Load labels
         if self.mode in ('train', 'test'):
             label = np.load(label_path)
-            self.label_avg = utils.average_score(label)
+            self.label_avg = Utils.average_score(label)
 
         # Load landmarks
         pkl_file = os.path.join(image_path, 'landmarks.pkl')

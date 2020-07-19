@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.utils.data as Data
 import torchvision
 import math
-from models.Basic_model import Residual_block
-import models.Basic_model as basic
-import models.ops as ops
+from Models.Basic_model import Residual_block
+import Models.Basic_model as basic
+import Models.Ops as ops
 from torch.nn.utils import weight_norm
 from inspect import signature
 

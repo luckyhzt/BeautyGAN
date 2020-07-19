@@ -13,11 +13,11 @@ import pickle
 from collections import OrderedDict
 from torch.utils.tensorboard import SummaryWriter
 
-import models.Regressor as R
-import models.Loss as L
-from models import ops
-from dataset import FBP_dataset, FBP_dataset_V2
-import utils
+import Models.Regressor as R
+import Models.Loss as L
+from Models import Ops
+from Dataset import FBP_dataset, FBP_dataset_V2
+import Utils
 
 
 
@@ -48,7 +48,7 @@ class Trainer:
 
         # Start Training
         step = 0
-        run_vars = utils.Running_vars()
+        run_vars = Utils.Running_vars()
 
         print('\nStart training...\n')
         for e in range(config['max_epoch']):
@@ -125,7 +125,7 @@ class Trainer:
         pred = np.concatenate(pred, axis=0)
         target = np.concatenate(target, axis=0)
 
-        RMSE, MAE, PC = utils.loss_and_corr(pred, target)
+        RMSE, MAE, PC = Utils.loss_and_corr(pred, target)
 
         print('\nEvaluation, RMSE: {:.4f}, MAE: {:.4f}, PC: {:.4f}\n'.format(RMSE, MAE, PC))
 
@@ -219,7 +219,7 @@ def main():
     trainer = Trainer(train_loader, test_loader)
 
     # Lauch Tensorboard
-    t = threading.Thread(target=utils.launchTensorBoard, args=([config['result_path']]))
+    t = threading.Thread(target=Utils.launchTensorBoard, args=([config['result_path']]))
     t.start()
 
     # Start training

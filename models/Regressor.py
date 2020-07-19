@@ -4,7 +4,7 @@ import torch.utils.data as Data
 import torchvision
 import math
 import numpy as np
-from models.Basic_model import Residual_block
+from Models.Basic_model import Residual_block
 
 
 class Regressor(nn.Module):

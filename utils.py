@@ -32,7 +32,7 @@ class Running_vars:
 
 
 def launchTensorBoard(logdir, port=6006, host='0.0.0.0'):
-    os.system('tensorboard --logdir=' + logdir + ' --port=' + str(port) + ' --host=' + host)
+    os.system('python -m tensorboard.main --logdir=' + logdir + ' --port=' + str(port) + ' --host=' + host)
     return
 
 
