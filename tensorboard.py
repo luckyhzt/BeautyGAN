@@ -13,7 +13,7 @@ def run_tensorboard(event):
     root.quit()
     root.destroy()
     if len(logdir) != 0:
-        os.system('tensorboard --logdir=' + logdir + ' --port=' + port)
+        os.system('python -m tensorboard.main --logdir=' + logdir + ' --port=' + port)
 
 
 root = tk.Tk()
