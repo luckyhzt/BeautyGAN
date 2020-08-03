@@ -41,14 +41,14 @@ def main():
         use_cuda = True
         frn.cuda()
 
-    train_iter = iter(train_loader)
-    x, _ = train_iter.next()
+    test_iter = iter(test_loader)
+    x, _ = test_iter.next()
     x = x.cuda()
     x = Variable(x, requires_grad=True)
     f = frn(x, config['identity_layer'])[0]
     f = torch.mean( torch.square(f) )
     g = grad(f, x)[0]
-    g = torch.abs(g)
+    #g = torch.abs(g)
     g = torch.sum(g, dim=1)
     g = g.squeeze(0)
     g = g / torch.max(g)
@@ -63,7 +63,9 @@ def main():
     x = cv2.cvtColor(x, cv2.COLOR_RGB2BGR)
 
     cv2.imshow("Face", x)
+    cv2.imwrite('Visualize/Images/face.png', x*255)
     cv2.imshow("Mask", g)
+    cv2.imwrite('Visualize/Images/mask.png', g*255)
 
     # Apply mask
     index = np.argsort(g, axis=None)
@@ -72,6 +74,7 @@ def main():
         x[index[0][224*224 - 1 - i], index[1][224*224 - 1 - i], :] = [0.0, 0.0, 1.0]
 
     cv2.imshow("Combine", x)
+    cv2.imwrite('Visualize/Images/keypoint.png', x*255)
 
     cv2.waitKey(0)
 

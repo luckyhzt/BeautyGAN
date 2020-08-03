@@ -245,8 +245,6 @@ class FBP_dataset_V2(Data.Dataset):
         return self.len
 
 
-
-
 class AFAD(Data.Dataset):
     '''
     A customized dataset for AFAD

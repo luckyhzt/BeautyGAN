@@ -5,7 +5,7 @@ import pickle
 
 
 def main():
-    index = 1155
+    index = 12
     scale = 1.1
     
     dataset_path = 'D:/ThesisData/SCUT-FBP5500_v2'
@@ -29,7 +29,7 @@ def main():
     for i in range(landmarks.shape[0]):
         cv2.circle(face, tuple(np.int32(landmarks[i,:])), 2, (0,0,255), 2)
     # Draw bounding box
-    cv2.rectangle(face, (int(x0),int(y0)), (int(x1),int(y1)), (255,0,0), 2)
+    #cv2.rectangle(face, (int(x0),int(y0)), (int(x1),int(y1)), (255,0,0), 2)
 
     # Draw final box
     # Center and Size of extended face box
@@ -41,15 +41,16 @@ def main():
     y0 = int(center[1] - size/2)
     y1 = int(y0 + size)
     # Draw bounding box
-    cv2.rectangle(face, (int(x0),int(y0)), (int(x1),int(y1)), (0,255,0), 2)
+    #cv2.rectangle(face, (int(x0),int(y0)), (int(x1),int(y1)), (0,255,0), 2)
 
     # Extract face
-    face1 = face1[max(y0,0):min(y1,h), max(x0,0):min(x1,w), :]
+    face1 = face[max(y0,0):min(y1,h), max(x0,0):min(x1,w), :]
     face1 = cv2.resize(face1, (236,236), interpolation = cv2.INTER_AREA)
-    cv2.rectangle(face1, (0,0), (224,224), (0,255,0), 2)
+    face1 = face1[6:229, 6:229, :]
+    #cv2.rectangle(face1, (0,0), (224,224), (0,255,0), 2)
 
-    cv2.imwrite('Visualize/Images/face.png', face)
-    cv2.imwrite('Visualize/Images/cropped_face.png', face1)
+    #cv2.imwrite('Visualize/Images/face.png', face)
+    cv2.imwrite('Visualize/Images/face_landmark.png', face1)
     cv2.imshow('original', face)
     cv2.imshow('crop', face1)
     cv2.waitKey(0)
