@@ -1,4 +1,6 @@
-.vscode/settings.json
 Result
 *.pth
 /Test/Result_noIN
+.ipynb_checkpoints
+.vscode
+__pycache__
