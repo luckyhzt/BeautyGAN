@@ -23,7 +23,10 @@ def main():
     #dist = np.sum(label, axis=0)
     #print(dist)
 
-    print(np.count_nonzero( (label >= 1.5) & (label <= 4.0) ))
+    #print(np.count_nonzero( (label >= 1.5) & (label <= 4.0) ))
+
+    print(label.shape)
+    print(label[[502, 491, 560, 585]])
 
 
 

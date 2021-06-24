@@ -125,7 +125,7 @@ def save_tensor_as_image(tensor, path):
 
 def load_config():
     thisDir = os.path.dirname(__file__)
-    result_path = 'D:/Program/BeautyGAN/Train/Exp_3_cycle/Result'
+    result_path = 'D:/Program/BeautyGAN/Train/Result'
     experiment = 'Final'
     param = 'generator_300.pth'
 

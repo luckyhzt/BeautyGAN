@@ -62,7 +62,7 @@ if __name__ == '__main__':
     label_dist = label_distribution(label)
     label_lvl = label_level(label_avg, level_gaps=1.0)
 
-    print(np.sum(label_lvl[400:500, :], axis=0))
+    print(label_avg.shape)
 
     #np.save('./Data/Labeled_data/Label/label_avg.npy', label_avg)
     #np.save('./Data/Labeled_data/Label/label_dist.npy', label_dist)

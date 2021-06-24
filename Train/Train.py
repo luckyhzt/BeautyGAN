@@ -53,7 +53,7 @@ class Trainer:
             self.feature.cuda()
         else:
             self.use_cuda = False
-        
+
         # Setup pre-trained model
         self.regressor.load(config['regressor_path'])
         self.regressor.eval()
@@ -163,7 +163,6 @@ class Trainer:
         d_loss_d = L.adversarial_loss(d_output_d, True)
         d_loss_g = L.adversarial_loss(d_output_g, False)
         d_loss = config['alpha_d']*d_loss_d + config['alpha_g']*d_loss_g
-
         # Back propagation
         d_loss.backward()
         self.optim_D.step()
