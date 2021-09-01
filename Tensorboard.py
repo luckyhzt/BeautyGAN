@@ -10,6 +10,8 @@ def getDir(root):
 
 def run_tensorboard(event):
     port = entry.get()
+    if port == '':
+        port = str(6006)
     root.quit()
     root.destroy()
     if len(logdir) != 0:
