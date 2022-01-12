@@ -4,6 +4,9 @@ This is the original pytorch implementation of paper "Identity-Preserved Face Be
 The code currently is not refactored and not guaranteed to be executed on other machines.
 
 If you find it useful, please cite:
+## BibTeX
+
+```
 @INPROCEEDINGS{9413167,
   author={Huang, Zhitong and Suen, Ching Yee},
   booktitle={2020 25th International Conference on Pattern Recognition (ICPR)}, 
@@ -13,3 +16,5 @@ If you find it useful, please cite:
   number={},
   pages={7273-7280},
   doi={10.1109/ICPR48806.2021.9413167}}
+}
+```
