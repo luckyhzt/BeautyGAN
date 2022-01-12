@@ -3,9 +3,9 @@
 This is the original pytorch implementation of paper "Identity-Preserved Face Beauty Transformation with Conditional Generative Adversarial Networks".
 The code currently is not refactored and not guaranteed to be executed on other machines.
 
-If you find it useful, please cite:
-## BibTeX
 
+## BibTeX
+If you find it useful, please cite:
 ```
 @INPROCEEDINGS{9413167,
   author={Huang, Zhitong and Suen, Ching Yee},
